@@ -1,0 +1,34 @@
+# VCS
+.git
+.gitignore
+
+# Local env and secrets
+.env
+
+# Python caches and local virtualenvs
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+.venv_clean/
+venv/
+
+# Test/tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+pytest-cache-files-*
+
+# Local artifacts and logs
+*.log
+*.out
+*.err
+latest_*.log
+full_run_output.log
+inference_output.log
+server_smoke.log
+server_smoke.err.log
+
+# OS/editor
+.DS_Store
+Thumbs.db

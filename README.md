@@ -66,7 +66,7 @@ Each task has:
 
 - deterministic fixtures
 - automated grading
-- normalized score in `[0.0, 1.0]`
+- normalized task-level final score in strict `(0.0, 1.0)`
 - partial progress reward signals
 
 ## Action Space
@@ -232,7 +232,7 @@ Validator checks:
 - `openenv.yaml` structure
 - endpoint behavior (`/health`, `/reset`, `/step`, `/state`)
 - task registry has at least 3 tasks with easy/medium/hard
-- grader outputs in `[0.0, 1.0]`
+- task-level grader outputs in strict `(0.0, 1.0)`
 - inference script exists and produces strict `[START]/[STEP]/[END]` format
 - env var references for `API_BASE_URL`, `MODEL_NAME`, `API_KEY`
 - Dockerfile essentials

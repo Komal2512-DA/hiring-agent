@@ -144,8 +144,8 @@ def _check_env_and_graders() -> List[str]:
 
     for task in tasks:
         score = _run_baseline_once(env, task.task_id)
-        if not (0.0 <= score <= 1.0):
-            errors.append(f"Task {task.task_id} grader score out of bounds: {score}")
+        if not (0.0 < score < 1.0):
+            errors.append(f"Task {task.task_id} grader score must be strictly in (0,1): {score}")
 
     return errors
 

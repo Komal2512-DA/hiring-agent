@@ -14,6 +14,13 @@ def clamp01(value: float) -> float:
     return max(0.0, min(1.0, float(value)))
 
 
+def clamp_open01(value: float, epsilon: float = 1e-6) -> float:
+    """Clamp to a strict open interval (0, 1) for evaluators that disallow boundaries."""
+    lo = float(epsilon)
+    hi = 1.0 - lo
+    return max(lo, min(hi, float(value)))
+
+
 def timezone_overlap_hours(candidate_tz: int, team_tz: int) -> float:
     delta = abs(candidate_tz - team_tz)
     wrapped_delta = min(delta, 24 - delta)

@@ -2,6 +2,7 @@ from app.env import HiringOpenEnv
 from app.graders import grade_task_state
 from app.models import Action, ActionType
 from app.policy import choose_advances, choose_offer_candidate, choose_shortlist
+from app.utils import clamp_open01
 
 
 def _run_baseline_task(env: HiringOpenEnv, task_id: str) -> float:
@@ -38,5 +39,18 @@ def test_grader_scores_within_range():
     env = HiringOpenEnv(seed=42)
     for task in env.list_tasks():
         score = _run_baseline_task(env, task.task_id)
-        assert 0.0 <= score <= 1.0
+        assert 0.0 < score < 1.0
 
+
+def test_final_score_is_always_strict_open_interval():
+    env = HiringOpenEnv(seed=42)
+    for task in env.list_tasks():
+        env.reset(task.task_id)
+        initial = env.state()
+        initial_score = grade_task_state(initial.task, initial, initial.candidates).final_score
+        assert 0.0 < initial_score < 1.0
+
+
+def test_clamp_open01_boundaries():
+    assert clamp_open01(0.0) > 0.0
+    assert clamp_open01(1.0) < 1.0

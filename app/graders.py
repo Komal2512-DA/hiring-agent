@@ -15,6 +15,7 @@ from app.models import (
 )
 from app.utils import (
     clamp01,
+    clamp_open01,
     candidate_hard_filter,
     f1_overlap,
     location_diversity_score,
@@ -310,7 +311,8 @@ def grade_task_state(
     final_score = 0.0
     for item in subscores:
         final_score += weight[item.name] * item.score
-    final_score = clamp01(final_score)
+    # Task-level score is kept in strict (0, 1) to satisfy strict evaluator bounds.
+    final_score = clamp_open01(final_score)
 
     summary = (
         f"Task {task.task_id} scored {final_score:.3f} with strongest signal "
@@ -331,5 +333,5 @@ def grade_progress(
 ) -> float:
     graded = grade_task_state(task, state, candidates)
     if state.final_decision is None:
-        return clamp01(graded.final_score * 0.85)
-    return graded.final_score
+        return clamp_open01(graded.final_score * 0.85)
+    return clamp_open01(graded.final_score)

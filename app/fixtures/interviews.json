@@ -1,0 +1,9 @@
+[
+  {"feedback_id":"F001","task_id":"task_medium_tradeoff_ml","candidate_id":"C006","interviewer_id":"INT-ML-1","technical_score":0.91,"communication_score":0.82,"recommendation":"advance","notes":"Strong production ML fundamentals and clear thinking."},
+  {"feedback_id":"F002","task_id":"task_medium_tradeoff_ml","candidate_id":"C007","interviewer_id":"INT-ML-2","technical_score":0.84,"communication_score":0.74,"recommendation":"advance","notes":"Good systems depth, slight communication gaps."},
+  {"feedback_id":"F003","task_id":"task_medium_tradeoff_ml","candidate_id":"C010","interviewer_id":"INT-ML-3","technical_score":0.89,"communication_score":0.90,"recommendation":"hold","notes":"Excellent fit but high notice period and low timezone overlap risk."},
+  {"feedback_id":"F004","task_id":"task_hard_hiring_manager_e2e","candidate_id":"C011","interviewer_id":"INT-MGR-1","technical_score":0.82,"communication_score":0.90,"recommendation":"advance","notes":"Balanced management and engineering depth with strong hiring judgment."},
+  {"feedback_id":"F005","task_id":"task_hard_hiring_manager_e2e","candidate_id":"C012","interviewer_id":"INT-MGR-2","technical_score":0.88,"communication_score":0.86,"recommendation":"advance","notes":"Very strong manager, slightly slower decision cadence in case exercise."},
+  {"feedback_id":"F006","task_id":"task_hard_hiring_manager_e2e","candidate_id":"C013","interviewer_id":"INT-MGR-3","technical_score":0.60,"communication_score":0.78,"recommendation":"reject","notes":"People management is good but technical bar for this role is not met."},
+  {"feedback_id":"F007","task_id":"task_hard_hiring_manager_e2e","candidate_id":"C014","interviewer_id":"INT-MGR-4","technical_score":0.80,"communication_score":0.88,"recommendation":"hold","notes":"Strong communication; just below years-of-experience requirement."}
+]

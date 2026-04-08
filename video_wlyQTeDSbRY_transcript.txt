@@ -1,0 +1,242 @@
+3.9	Or moving on, we can run the Docker
+6.9	container and use the same example.
+9.6	We can
+10.9	pull the container and then so we can
+13.3	clone the repo and then make changes to
+15.9	it and then build the Docker container
+17.9	as well. And inside the open M CLI we've
+20.6	got like a convenience tool open M build
+23.0	that that does that for us. But it's
+26.4	essentially just wrapping Docker build
+28.3	so so we can also do the same there.
+31.4	And then we can run these containers and
+34.0	as I said before connect with them
+36.6	from Python in the same kind of way.
+41.3	So what does it look like from the CLI?
+44.8	So as we showed before you can do this
+47.2	open M inner and you can create the
+48.8	skeleton and then you can push that
+50.8	straight to the hub which I'll come back
+52.6	to in a second as a little demo.
+56.5	And then you can configure that
+58.3	[clears throat] environment mainly with
+60.2	environment variables to say like how
+61.8	many workers do you want to use
+64.4	and
+65.7	whether you want to use concurrent
+67.4	environments which I'll come to in the
+69.0	next section.
+72.2	So feel free to kind of
+74.1	drop in any interruptions if you like.
+77.2	I'm just going to set this up so it's a
+78.8	little bit easier to see. Yes. I I had a
+81.4	couple of questions like like basically
+83.9	so I know you mentioned at some point
+85.2	like oh if you don't have like Docker
+86.6	you can use UV. Well like how does this
+88.6	work like I mean presumably most
+90.0	environments aren't written in Python
+91.8	like if you're Pokemon you're written in
+93.2	like whatever that was written in. Then
+95.3	you have like some shim in Python. So
+97.8	like could you speak to how like
+99.0	basically native code gets deployed in
+101.7	environments on the hub?
+104.2	Yeah so
+105.9	when when the environment is outside of
+107.8	Python you need to use a container to
+110.7	define the code outside of Python and do
+113.0	dependency management basically. So if
+115.2	you say like if you want to run the
+117.4	Uvicorn application let's say the Python
+119.4	application. Yeah you can't you need to
+122.5	manage the dependencies outside of
+123.9	Python and we'll do that with Docker.
+125.8	That's basically
+127.3	yeah.
+128.4	I see. Just and I know this may be a
+130.0	pedantic question but just because you
+131.4	have cost there so the cost basically
+133.5	it's like
+134.8	is it like paid for by the people
+136.5	hosting the environment or is it paid
+138.1	for by the people that are pulling the
+139.7	environment?
+141.0	How does this work if people are having
+142.5	like multiple rollouts where they're
+144.0	doing multiple parallel eval?
+146.2	Yeah so in the example I showed you
+148.9	where like this kind of example where
+152.9	you interact with the like the space
+154.6	itself, right? Like the
+157.9	the environment host would would pay for
+160.0	that compute. And so in most cases like
+164.1	if you're publishing an environment you
+166.0	would probably want to do that free and
+167.6	just let people try it out and kind of
+169.1	understand the environment that you use
+170.7	to maybe learn from it.
+172.4	And then they could pull that
+174.2	environment and and run it for free.
+176.8	Because of how spaces works like
+181.1	let me just maybe show you like
+183.2	you can just duplicate spaces so they're
+185.2	kind of like super easy to just pull
+187.0	over to your
+187.5	>> Oh I see.
+189.0	Like running locally is something you
+190.6	want people to do. Like you want to
+192.9	discover things and then like I see.
+195.4	Totally. So yeah I expect most people
+197.9	will like come here and like try it out
+199.7	and learn from it maybe duplicate it if
+201.8	they want to make changes and share it.
+203.6	But in most cases we expect people to
+205.6	kind of
+206.9	to run this this locally.
+210.0	Got [laughter] it. Okay.
+212.3	Cool. Um so yeah okay so I shared this
+215.6	little demo and we've kind of seen this
+218.0	a little bit already but let me just
+219.6	work through it. So you basically just
+221.8	do open M inner
+223.6	which looks like
+225.4	this and it's a simple command line it
+228.0	just needs to know what the name of your
+230.6	environment's going to be so let's call
+232.2	it GPU mode.
+234.1	And so we basically
+240.4	Let me do it like this.
+242.4	And okay.
+243.5	Sorry.
+246.7	Sorry I I just had a quick add to what
+249.4	Ben answered about Mark's question. Um
+252.5	for like most of these game environments
+254.3	and things like that you can imagine
+255.7	you're sort of building adapters or
+257.4	wrappers just like add them to the spec.
+260.2	But our goal for like
+262.1	hopefully this year is we'll bring like
+264.0	environments on the ground up so you'll
+265.6	see them like being less clunky. And the
+268.4	other thing I want to call out is like
+269.9	most of these are for reinforcement
+271.6	learning training so
+273.3	that we'll go in a lot more depth but
+275.2	the CPU cost of running an environment
+277.8	compared to like the GPU involved in
+279.6	training is like really fractional. So
+282.0	you can imagine like you probably would
+283.7	not mind hosting these on your server.
+288.5	Sorry to interrupt your flow Ben. No
+290.4	worries. It's it's actually extremely
+292.0	helpful.
+294.2	Gave me a chance to get us back in line.
+296.1	So yeah okay um
+298.7	as I was showing you this is just how
+300.4	you initialize an environment. So and I
+303.1	just want to kind of work through that.
+304.4	So let's say I'm going to create a new
+306.0	environment called GPU mode. So I just
+308.0	say open M inner GPU mode and it creates
+311.5	that for me and it tells me that there's
+313.6	this new file called open M mode. Let's
+315.9	go and have a look at that.
+317.7	And if you look over here in like the
+318.8	file explorer this is what it looks like
+321.4	and this is the skeleton. So
+323.2	it comes out of the box. So if you look
+325.5	you're looking on the right pane here
+327.6	and it comes out of the box with this
+329.2	read me that has some metadata which
+331.6	makes it discoverable on the hub
+333.0	basically.
+334.3	But also gives you like the templates
+336.4	and you'll notice that we've like set it
+339.1	the entire skeleton so that it's already
+341.5	pre-constructed for you with the name
+343.4	that you chose which in my case was GPU
+345.3	mode.
+346.4	And it gives you all of these examples
+348.2	of how you do it. So out of the box you
+350.7	have like a self-contained fully
+353.0	documented end that is also
+355.6	interoperable and and and standardized
+358.5	and uses open M. It comes with this pi
+361.0	project toml which installs
+363.9	all the like the base dependencies that
+366.1	you need and then gives some like
+367.7	recommendations and gets that running.
+371.2	And then it has the the client code
+373.3	itself which Sanyam already kind of
+376.2	unpacked and went into detail on.
+381.4	And that's that's all that. Right. So
+383.8	then um
+385.7	let's just change into that.
+389.4	We don't want to get too far into this
+390.8	cuz we want to go into the um
+393.3	some other things after that but
+395.7	we can then basically just like run this
+397.5	end like this locally.
+400.0	Ah sorry that port's already in use.
+404.5	So yeah okay that's it running locally
+406.8	now and then if we go to our like Python
+410.3	interpreter
+411.7	I think I have that here. So okay if I
+414.7	did that I think it
+416.9	wouldn't work that's not deployed. But
+420.5	if I copy the URL up here
+424.4	then I can just say okay run on here.
+429.3	Yeah okay and then it's like step
+431.0	through and there's a reward and then
+432.4	another reward and that's this
+435.5	open M environment running here.
+438.4	And then let me um
+441.2	just now go back to my terminal
+444.0	close that down
+445.8	and do open M
+448.3	push.
+450.6	Hope I'm in the right directory. I was
+452.0	yeah.
+453.1	Cool. So then that's now pushed it to
+455.6	the hub and if I go over here I open the
+458.5	browser
+459.9	you see that I've got this space running
+462.4	here open M.
+464.4	And then I can uh
+467.4	just like test out the end
+469.6	here and this is just a skeleton end it
+472.1	just like echoes back whatever you you
+474.2	ask it so it's just echoed back hello.
+476.9	But if the end was like more complicated
+479.2	or let's say it was like Soloku or
+481.3	Textarena or even a browser control you
+483.9	could try that out and kind of get a
+485.3	sense of of how that environment works
+487.7	and what the model was was doing
+490.4	for this use case like in the space.
+492.9	And then you would be able to as I
+496.2	showed you go here and kind of duplicate
+498.1	it embed this space but you could also
+500.6	run locally.
+502.3	And then you'll see this Docker run
+504.5	command
+505.8	which is the same Docker run command
+507.6	from the docs.
+509.1	I think this should just drop in.
+511.7	Yeah and so then now what you'll see
+513.1	it's doing is that it's running the same
+516.6	container image from the space
+519.0	inside
+520.9	like locally but this time by Docker
+522.9	instead of the
+524.3	um
+526.0	instead of the
+527.8	Python server the fast API application.
+531.1	So that's it. Let me see if I can also
+534.9	just interact with that like that just
+537.5	to kind of complete the loop.
+540.2	I think that one should work. Yeah. So
+542.8	now you've got like the same application
+544.6	running in the space which you which you
+546.0	can also use.

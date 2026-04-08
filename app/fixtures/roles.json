@@ -1,0 +1,53 @@
+[
+  {
+    "requisition_id": "REQ-BE-001",
+    "title": "Backend Platform Engineer",
+    "description": "Build and maintain hiring platform backend services used by recruiter ops.",
+    "required_skills": ["python", "fastapi", "sql"],
+    "preferred_skills": ["docker", "aws", "system_design"],
+    "min_years_experience": 3,
+    "max_compensation_lpa": 34,
+    "team_timezone_offset_hours": 5,
+    "min_timezone_overlap_hours": 4,
+    "max_notice_period_days": 60,
+    "min_communication_score": 0.60,
+    "min_leadership_score": 0.40,
+    "remote_allowed": true,
+    "hiring_urgency": "high",
+    "budget_band": {"name": "B2", "min_lpa": 24, "max_lpa": 34, "currency": "INR"}
+  },
+  {
+    "requisition_id": "REQ-ML-002",
+    "title": "Applied ML Engineer",
+    "description": "Own candidate-matching models and production inference workflows.",
+    "required_skills": ["python", "ml", "sql"],
+    "preferred_skills": ["llm", "nlp", "mle"],
+    "min_years_experience": 4,
+    "max_compensation_lpa": 42,
+    "team_timezone_offset_hours": 5,
+    "min_timezone_overlap_hours": 5,
+    "max_notice_period_days": 45,
+    "min_communication_score": 0.65,
+    "min_leadership_score": 0.45,
+    "remote_allowed": true,
+    "hiring_urgency": "medium",
+    "budget_band": {"name": "M3", "min_lpa": 30, "max_lpa": 42, "currency": "INR"}
+  },
+  {
+    "requisition_id": "REQ-ENGM-003",
+    "title": "Engineering Manager, Hiring Intelligence",
+    "description": "Lead the hiring intelligence squad and ship reliable recruiting systems.",
+    "required_skills": ["people_management", "python", "hiring"],
+    "preferred_skills": ["llm", "system_design", "stakeholder_management"],
+    "min_years_experience": 8,
+    "max_compensation_lpa": 55,
+    "team_timezone_offset_hours": 5,
+    "min_timezone_overlap_hours": 5,
+    "max_notice_period_days": 90,
+    "min_communication_score": 0.75,
+    "min_leadership_score": 0.75,
+    "remote_allowed": true,
+    "hiring_urgency": "high",
+    "budget_band": {"name": "L1", "min_lpa": 45, "max_lpa": 55, "currency": "INR"}
+  }
+]

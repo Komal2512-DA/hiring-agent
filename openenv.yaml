@@ -1,0 +1,70 @@
+name: hiring-agent-openenv
+version: 1.0.0
+domain: hiring
+summary: Real-world OpenEnv environment for AI hiring workflow automation.
+description: |
+  This environment simulates end-to-end hiring operations with business constraints:
+  requisition intake, screening, shortlisting, interview progression, and final decisioning.
+
+entrypoint:
+  type: fastapi
+  module: app.main
+  app: app
+
+api:
+  health_endpoint: /health
+  list_tasks_endpoint: /tasks
+  reset_endpoint: /reset
+  step_endpoint: /step
+  state_endpoint: /state
+
+environment:
+  required_methods:
+    - reset
+    - step
+    - state
+  state_model: app.models.EnvironmentState
+  action_model: app.models.Action
+  observation_model: app.models.Observation
+
+tasks:
+  registry_function: app.tasks.get_task_registry
+  minimum_count: 3
+  expected_difficulties:
+    - easy
+    - medium
+    - hard
+
+evaluation:
+  normalized_score_range:
+    min: 0.0
+    max: 1.0
+  requires_graders: true
+  required_score_dimensions:
+    - hard_requirement_compliance
+    - shortlist_quality
+    - progression_quality
+    - final_decision_quality
+    - consistency_and_justification
+    - feedback_alignment
+    - fairness_and_process_guardrails
+    - bias_audit
+    - llm_decision_quality
+
+runtime_constraints:
+  max_inference_runtime_minutes: 20
+  target_machine:
+    vcpu: 2
+    memory_gb: 8
+
+required_env_vars:
+  - API_BASE_URL
+  - MODEL_NAME
+  - API_KEY
+
+inference:
+  script: inference.py
+  required_stdout_markers:
+    - "[START]"
+    - "[STEP]"
+    - "[END]"

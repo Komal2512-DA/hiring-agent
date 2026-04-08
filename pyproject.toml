@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hiring-agent-openenv"
+version = "1.0.0"
+description = "Submission-ready OpenEnv hiring environment with step/reset/state APIs, graders, and baseline inference."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "Hiring Agent Team" }]
+dependencies = [
+  "fastapi==0.115.2",
+  "uvicorn[standard]==0.30.6",
+  "pydantic==2.12.5",
+  "openai==2.30.0",
+  "openenv-core>=0.2.0",
+  "requests==2.32.3",
+  "PyYAML==6.0.2",
+  "httpx==0.28.1",
+  "python-dotenv==1.2.2",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["app*", "server*"]

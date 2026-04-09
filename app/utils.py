@@ -9,7 +9,7 @@ from openai import OpenAI
 from app.config import get_settings
 from app.models import CandidateProfile, JobRequisition
 
-SCORE_MIN = 0.1
+SCORE_MIN = 1e-6
 SCORE_MAX = 0.999999
 
 
@@ -18,7 +18,7 @@ def clamp01(value: float) -> float:
 
 
 def clamp_open01(value: float, epsilon: float = 1e-6) -> float:
-    """Clamp to strict evaluator-safe score range (0.1, 0.999999)."""
+    """Clamp to strict open interval (0, 1) with evaluator-safe bounds."""
     lo = max(float(epsilon), SCORE_MIN)
     hi = SCORE_MAX
     return max(lo, min(hi, float(value)))

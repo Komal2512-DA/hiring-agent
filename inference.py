@@ -20,7 +20,7 @@ def _bool_text(value: bool) -> str:
 
 
 def _submission_range(value: float) -> float:
-    return max(0.1, min(0.999999, float(value)))
+    return max(1e-6, min(0.999999, float(value)))
 
 
 def _observation_summary(observation) -> str:

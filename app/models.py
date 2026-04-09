@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, model_validator
 
 
-def _strict_open01(value: float, lower: float = 0.1, upper: float = 0.999999) -> float:
+def _strict_open01(value: float, lower: float = 1e-6, upper: float = 0.999999) -> float:
     return max(float(lower), min(float(upper), float(value)))
 
 

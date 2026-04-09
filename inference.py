@@ -41,16 +41,13 @@ def _print_start(task: TaskDefinition) -> None:
 
 
 def _print_step(step_index: int, action: Action, observation, reward: RewardOutput) -> None:
-    # Display zero-progress steps as exactly 0 in inference logs, while
-    # internal environment scoring remains strict-open.
-    displayed_reward = 0.0 if reward.step_reward <= 1e-5 else reward.step_reward
+    displayed_reward = clamp_open01(reward.step_reward, epsilon=1e-5)
     print("[STEP]")
     print(f"step_index={step_index}")
     print(f"action_type={action.action_type.value}")
     print(f"action_payload={compact_json(action.payload)}")
     print(f"observation_summary={_observation_summary(observation)}")
-    reward_text = "0" if displayed_reward == 0.0 else f"{displayed_reward:.6f}"
-    print(f"reward={reward_text}")
+    print(f"reward={displayed_reward:.6f}")
     print(f"done={_bool_text(observation.done)}")
     print()
 

@@ -41,12 +41,13 @@ def _print_start(task: TaskDefinition) -> None:
 
 
 def _print_step(step_index: int, action: Action, observation, reward: RewardOutput) -> None:
+    safe_reward = clamp_open01(reward.step_reward, epsilon=1e-5)
     print("[STEP]")
     print(f"step_index={step_index}")
     print(f"action_type={action.action_type.value}")
     print(f"action_payload={compact_json(action.payload)}")
     print(f"observation_summary={_observation_summary(observation)}")
-    print(f"reward={reward.step_reward:.6f}")
+    print(f"reward={safe_reward:.6f}")
     print(f"done={_bool_text(observation.done)}")
     print()
 

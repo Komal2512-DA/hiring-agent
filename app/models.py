@@ -3,7 +3,24 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+
+def _strict_open01(value: float, epsilon: float = 1e-5) -> float:
+    lo = float(epsilon)
+    hi = 1.0 - lo
+    return max(lo, min(hi, float(value)))
+
+
+class OpenEnvModel(BaseModel):
+    @model_validator(mode="after")
+    def _clamp_score_fields(self) -> "OpenEnvModel":
+        for name, value in self.__dict__.items():
+            if value is None:
+                continue
+            if "score" in name.lower() and isinstance(value, (int, float)):
+                setattr(self, name, _strict_open01(float(value)))
+        return self
 
 
 class Difficulty(str, Enum):
@@ -36,14 +53,14 @@ class ActionType(str, Enum):
     FINALIZE_DECISION = "finalize_decision"
 
 
-class CompensationBand(BaseModel):
+class CompensationBand(OpenEnvModel):
     name: str
     min_lpa: float
     max_lpa: float
     currency: str = "INR"
 
 
-class JobRequisition(BaseModel):
+class JobRequisition(OpenEnvModel):
     requisition_id: str
     title: str
     description: str
@@ -61,7 +78,7 @@ class JobRequisition(BaseModel):
     budget_band: CompensationBand
 
 
-class HiringConstraintSet(BaseModel):
+class HiringConstraintSet(OpenEnvModel):
     max_shortlist_size: int
     max_interview_advances: int
     fairness_guardrails_enabled: bool = True
@@ -69,7 +86,7 @@ class HiringConstraintSet(BaseModel):
     disallow_out_of_band_offer: bool = True
 
 
-class CandidateProfile(BaseModel):
+class CandidateProfile(OpenEnvModel):
     candidate_id: str
     name: str
     current_title: str
@@ -86,7 +103,7 @@ class CandidateProfile(BaseModel):
     underrepresented_group: Optional[bool] = None
 
 
-class InterviewFeedback(BaseModel):
+class InterviewFeedback(OpenEnvModel):
     feedback_id: str
     task_id: str
     candidate_id: str
@@ -97,7 +114,7 @@ class InterviewFeedback(BaseModel):
     notes: str
 
 
-class HiringDecision(BaseModel):
+class HiringDecision(OpenEnvModel):
     offer_candidate_id: Optional[str] = None
     compensation_band: Optional[str] = None
     reject_candidate_ids: List[str] = Field(default_factory=list)
@@ -105,7 +122,7 @@ class HiringDecision(BaseModel):
     justification: str = ""
 
 
-class TaskDefinition(BaseModel):
+class TaskDefinition(OpenEnvModel):
     task_id: str
     name: str
     difficulty: Difficulty
@@ -122,24 +139,24 @@ class TaskDefinition(BaseModel):
     expected_compensation_band: str
 
 
-class Action(BaseModel):
+class Action(OpenEnvModel):
     action_type: ActionType
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 
-class ActionRecord(BaseModel):
+class ActionRecord(OpenEnvModel):
     step_index: int
     action: Action
 
 
-class ObservationCandidateView(BaseModel):
+class ObservationCandidateView(OpenEnvModel):
     candidate_id: str
     stage: PipelineStage
     weighted_fit_score: float
     summary: str
 
 
-class Observation(BaseModel):
+class Observation(OpenEnvModel):
     task_id: str
     task_name: str
     difficulty: Difficulty
@@ -152,7 +169,7 @@ class Observation(BaseModel):
     message: str
 
 
-class BiasMetric(BaseModel):
+class BiasMetric(OpenEnvModel):
     metric_name: str
     group_rates: Dict[str, float]
     disparity: float
@@ -161,7 +178,7 @@ class BiasMetric(BaseModel):
     rationale: str
 
 
-class BiasAuditResult(BaseModel):
+class BiasAuditResult(OpenEnvModel):
     audited_dimension: str
     sample_size: int
     adverse_impact_ratio: float
@@ -174,13 +191,13 @@ class BiasAuditResult(BaseModel):
     summary: str
 
 
-class LLMScoreDetail(BaseModel):
+class LLMScoreDetail(OpenEnvModel):
     score: float
     rationale: str
     source: str
 
 
-class EnvironmentState(BaseModel):
+class EnvironmentState(OpenEnvModel):
     task: TaskDefinition
     candidates: Dict[str, CandidateProfile]
     stages: Dict[str, PipelineStage]
@@ -198,13 +215,13 @@ class EnvironmentState(BaseModel):
     previous_progress_score: float = 1e-5
 
 
-class GraderSubscore(BaseModel):
+class GraderSubscore(OpenEnvModel):
     name: str
     score: float
     rationale: str
 
 
-class GraderResult(BaseModel):
+class GraderResult(OpenEnvModel):
     task_id: str
     final_score: float
     subscores: List[GraderSubscore]
@@ -213,21 +230,21 @@ class GraderResult(BaseModel):
     summary: str
 
 
-class RewardOutput(BaseModel):
+class RewardOutput(OpenEnvModel):
     step_reward: float
     progress_score: float
     final_score: Optional[float] = None
 
 
-class ResetRequest(BaseModel):
+class ResetRequest(OpenEnvModel):
     task_id: Optional[str] = None
 
 
-class StepResponse(BaseModel):
+class StepResponse(OpenEnvModel):
     observation: Observation
     reward: RewardOutput
 
 
-class ResetResponse(BaseModel):
+class ResetResponse(OpenEnvModel):
     observation: Observation
     state: EnvironmentState

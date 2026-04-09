@@ -233,7 +233,7 @@ Validator checks:
 - `openenv.yaml` structure
 - endpoint behavior (`/health`, `/reset`, `/step`, `/state`)
 - task registry has at least 3 tasks with easy/medium/hard
-- task-level grader outputs in strict `(0.0, 1.0)`
+- task-level grader outputs in strict `(0, 1)`
 - inference script exists and produces strict `[START]/[STEP]/[END]` format
 - env var references for `API_BASE_URL`, `MODEL_NAME`, `API_KEY`
 - Dockerfile essentials

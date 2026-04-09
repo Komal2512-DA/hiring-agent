@@ -20,7 +20,7 @@ def _bool_text(value: bool) -> str:
 
 
 def _submission_range(value: float) -> float:
-    return max(1e-6, min(0.999999, float(value)))
+    return max(1e-6, min(0.99, float(value)))
 
 
 def _observation_summary(observation) -> str:
@@ -44,8 +44,16 @@ def _print_start(task: TaskDefinition) -> None:
     print()
 
 
-def _print_step(step_index: int, action: Action, observation, reward: RewardOutput) -> None:
+def _print_step(
+    step_index: int,
+    action: Action,
+    observation,
+    reward: RewardOutput,
+    printed_reward_total: float,
+) -> float:
     displayed_reward = _submission_range(reward.step_reward)
+    remaining_budget = max(1e-6, 0.99 - printed_reward_total)
+    displayed_reward = min(displayed_reward, remaining_budget)
     print("[STEP]")
     print(f"step_index={step_index}")
     print(f"action_type={action.action_type.value}")
@@ -54,6 +62,7 @@ def _print_step(step_index: int, action: Action, observation, reward: RewardOutp
     print(f"reward={displayed_reward:.6f}")
     print(f"done={_bool_text(observation.done)}")
     print()
+    return printed_reward_total + displayed_reward
 
 
 def _print_end(task_id: str, final_score: float, result_summary: str) -> None:
@@ -94,7 +103,7 @@ def _build_result_summary(graded) -> str:
             "adverse_impact_ratio": _safe(bias.adverse_impact_ratio) if bias else None,
             "passed": bias.passed if bias else None,
             "flagged_metrics": bias.flagged_metrics if bias else [],
-            "summary": bias.summary if bias else None,
+            "summary": "available" if bias else None,
         },
     }
     return compact_json(payload)
@@ -201,11 +210,12 @@ def run_task(env: HiringOpenEnv, task: TaskDefinition, helper: OpenAIJustificati
 
     actions = _build_action_plan(task, env, helper)
     last_reward: RewardOutput | None = None
+    printed_reward_total = 0.0
 
     for step_index, action in enumerate(actions, start=1):
         observation, reward = env.step(action)
         last_reward = reward
-        _print_step(step_index, action, observation, reward)
+        printed_reward_total = _print_step(step_index, action, observation, reward, printed_reward_total)
         if observation.done:
             break
 

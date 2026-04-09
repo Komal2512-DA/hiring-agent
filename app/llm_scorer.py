@@ -8,7 +8,7 @@ from openai import OpenAI
 
 from app.config import get_settings
 from app.models import CandidateProfile, EnvironmentState, LLMScoreDetail, TaskDefinition
-from app.utils import clamp01, clamp_open01
+from app.utils import SCORE_MAX, SCORE_MIN, clamp01, clamp_open01
 
 
 def _extract_json_object(text: str) -> Optional[Dict[str, object]]:
@@ -52,36 +52,36 @@ class DecisionLLMScorer:
         decision = state.final_decision
         if decision is None:
             return LLMScoreDetail(
-                score=clamp_open01(0.0, epsilon=1e-2),
+                score=clamp_open01(SCORE_MIN, epsilon=SCORE_MIN),
                 rationale="No final decision for LLM scoring.",
                 source=source,
             )
 
         offer = decision.offer_candidate_id or ""
-        offer_match = 1.0 if offer == task.expected_offer_candidate_id else 0.0
+        offer_match = SCORE_MAX if offer == task.expected_offer_candidate_id else SCORE_MIN
         band = decision.compensation_band or state.chosen_compensation_band or ""
-        band_match = 1.0 if band == task.expected_compensation_band else 0.0
+        band_match = SCORE_MAX if band == task.expected_compensation_band else SCORE_MIN
         justification = (decision.justification or "").strip()
         justification_score = clamp01(len(justification) / 100.0)
-        evidence_score = clamp01(len(state.fit_summaries) / max(1.0, float(len(state.interview_advances) or 1)))
+        evidence_score = clamp01(len(state.fit_summaries) / max(1, float(len(state.interview_advances) or 1)))
 
         score = clamp01((0.35 * offer_match) + (0.25 * band_match) + (0.25 * justification_score) + (0.15 * evidence_score))
         # Keep textual diagnostics away from exact 0/1 boundaries to avoid strict parsers.
-        offer_text = clamp_open01(offer_match, epsilon=1e-2)
-        band_text = clamp_open01(band_match, epsilon=1e-2)
-        just_text = clamp_open01(justification_score, epsilon=1e-2)
-        evidence_text = clamp_open01(evidence_score, epsilon=1e-2)
+        offer_text = clamp_open01(offer_match, epsilon=SCORE_MIN)
+        band_text = clamp_open01(band_match, epsilon=SCORE_MIN)
+        just_text = clamp_open01(justification_score, epsilon=SCORE_MIN)
+        evidence_text = clamp_open01(evidence_score, epsilon=SCORE_MIN)
         rationale = (
             f"fallback_scoring offer_match={offer_text:.2f}, band_match={band_text:.2f}, "
             f"justification={just_text:.2f}, evidence={evidence_text:.2f}"
         )
-        return LLMScoreDetail(score=round(clamp_open01(score, epsilon=1e-2), 6), rationale=rationale, source=source)
+        return LLMScoreDetail(score=round(clamp_open01(score, epsilon=SCORE_MIN), 6), rationale=rationale, source=source)
 
     def score(self, task: TaskDefinition, state: EnvironmentState, candidates: Dict[str, CandidateProfile]) -> LLMScoreDetail:
         decision = state.final_decision
         if decision is None:
             return LLMScoreDetail(
-                score=clamp_open01(0.0, epsilon=1e-2),
+                score=clamp_open01(SCORE_MIN, epsilon=SCORE_MIN),
                 rationale="No final decision for LLM scoring.",
                 source="disabled",
             )
@@ -108,7 +108,7 @@ class DecisionLLMScorer:
 
         prompt = (
             "You are evaluating hiring decision quality. "
-            "Score from 0.0 to 1.0 based on requirement fit, evidence quality, policy consistency, "
+            "Score from 0.1 to 0.999999 based on requirement fit, evidence quality, policy consistency, "
             "and compensation alignment. Return strict JSON only with keys: "
             "{\"score\": <float_0_to_1>, \"rationale\": \"short_reason\"}. "
             f"Context: {json.dumps(payload, separators=(',', ':'))}"
@@ -124,10 +124,10 @@ class DecisionLLMScorer:
             text = getattr(response, "output_text", "").strip()
             parsed = _extract_json_object(text)
             if parsed:
-                score_val = clamp01(float(parsed.get("score", 0.0)))
+                score_val = clamp01(float(parsed.get("score", SCORE_MIN)))
                 rationale = str(parsed.get("rationale", "llm_scored"))
                 return LLMScoreDetail(
-                    score=round(clamp_open01(score_val, epsilon=1e-2), 6),
+                    score=round(clamp_open01(score_val, epsilon=SCORE_MIN), 6),
                     rationale=rationale,
                     source="llm",
                 )

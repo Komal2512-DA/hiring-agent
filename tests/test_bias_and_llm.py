@@ -3,6 +3,7 @@ from app.env import HiringOpenEnv
 from app.llm_scorer import DecisionLLMScorer
 from app.models import Action, ActionType
 from app.policy import choose_advances, choose_offer_candidate, choose_shortlist
+from app.utils import SCORE_MAX, SCORE_MIN
 
 
 def _build_finalized_state(task_id: str):
@@ -39,8 +40,8 @@ def _build_finalized_state(task_id: str):
 def test_bias_audit_output_is_valid():
     state = _build_finalized_state("task_hard_hiring_manager_e2e")
     audit = run_bias_audit(state.task, state, state.candidates)
-    assert 0.0 <= audit.overall_score <= 1.0
-    assert 0.0 <= audit.adverse_impact_ratio <= 1.0
+    assert SCORE_MIN <= audit.overall_score <= SCORE_MAX
+    assert SCORE_MIN <= audit.adverse_impact_ratio <= SCORE_MAX
     assert audit.metrics
     assert audit.audited_dimension
 
@@ -49,7 +50,7 @@ def test_llm_scorer_fallback_or_disabled_is_valid():
     state = _build_finalized_state("task_medium_tradeoff_ml")
     scorer = DecisionLLMScorer()
     detail = scorer.score(state.task, state, state.candidates)
-    assert 0.0 <= detail.score <= 1.0
+    assert SCORE_MIN <= detail.score <= SCORE_MAX
     assert detail.source in {"disabled", "fallback", "llm"}
     assert detail.rationale
 

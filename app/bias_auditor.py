@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, Iterable, List, Tuple
 
 from app.models import BiasAuditResult, BiasMetric, CandidateProfile, EnvironmentState, TaskDefinition
-from app.utils import candidate_hard_filter, clamp01, clamp_open01
+from app.utils import SCORE_MAX, SCORE_MIN, candidate_hard_filter, clamp01, clamp_open01
 
 
 def _normalize_gender(value: str | None) -> str | None:
@@ -73,27 +73,27 @@ def _group_rate(
 
     rates: Dict[str, float] = {}
     for g, count in pop_counts.items():
-        rates[g] = 0.0 if count == 0 else sel_counts.get(g, 0) / float(count)
+        rates[g] = SCORE_MIN if count == 0 else sel_counts.get(g, 0) / float(count)
     return rates
 
 
 def _disparity_from_rates(rates: Dict[str, float]) -> float:
     if not rates:
-        return 0.0
+        return SCORE_MIN
     values = list(rates.values())
     return max(values) - min(values)
 
 
 def _adverse_impact_ratio(rates: Dict[str, float]) -> float:
     if not rates:
-        return 1.0
-    positives = [v for v in rates.values() if v > 0]
+        return SCORE_MAX
+    positives = [v for v in rates.values() if v > SCORE_MIN]
     if not positives:
-        return 1.0
+        return SCORE_MAX
     lo = min(positives)
     hi = max(positives)
-    if hi <= 0:
-        return 1.0
+    if hi <= SCORE_MIN:
+        return SCORE_MAX
     return clamp01(lo / hi)
 
 
@@ -109,7 +109,7 @@ def run_bias_audit(
 
     shortlist_rates = _group_rate(pool_ids, state.shortlist, group_map)
     shortlist_disparity = _disparity_from_rates(shortlist_rates)
-    shortlist_parity_score = clamp_open01(1.0 - shortlist_disparity, epsilon=1e-2)
+    shortlist_parity_score = clamp_open01(SCORE_MAX - shortlist_disparity, epsilon=SCORE_MIN)
 
     eligible_ids = [
         cid
@@ -119,11 +119,11 @@ def run_bias_audit(
     advance_population = eligible_ids if eligible_ids else pool_ids
     advance_rates = _group_rate(advance_population, state.interview_advances, group_map)
     advance_disparity = _disparity_from_rates(advance_rates)
-    advance_parity_score = clamp_open01(1.0 - advance_disparity, epsilon=1e-2)
+    advance_parity_score = clamp_open01(SCORE_MAX - advance_disparity, epsilon=SCORE_MIN)
 
     air_shortlist = _adverse_impact_ratio(shortlist_rates)
     air_advance = _adverse_impact_ratio(advance_rates)
-    air_min = clamp_open01(min(air_shortlist, air_advance), epsilon=1e-2)
+    air_min = clamp_open01(min(air_shortlist, air_advance), epsilon=SCORE_MIN)
 
     metrics: List[BiasMetric] = [
         BiasMetric(
@@ -149,7 +149,7 @@ def run_bias_audit(
                 "advance_air": round(air_advance, 4),
                 "minimum_air": round(air_min, 4),
             },
-            disparity=round(1.0 - air_min, 4),
+            disparity=round(SCORE_MAX - air_min, 4),
             threshold=adverse_impact_threshold,
             passed=air_min >= adverse_impact_threshold,
             rationale="Four-fifths style ratio check using group selection rates.",
@@ -157,7 +157,7 @@ def run_bias_audit(
     ]
 
     flagged = [m.metric_name for m in metrics if not m.passed]
-    overall = clamp_open01((0.40 * shortlist_parity_score) + (0.35 * advance_parity_score) + (0.25 * air_min), epsilon=1e-2)
+    overall = clamp_open01((0.40 * shortlist_parity_score) + (0.35 * advance_parity_score) + (0.25 * air_min), epsilon=SCORE_MIN)
     passed = len(flagged) == 0
 
     summary = (

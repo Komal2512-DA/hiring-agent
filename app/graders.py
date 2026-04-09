@@ -49,7 +49,7 @@ def _hard_requirement_compliance(
         if profile and candidate_hard_filter(profile, task.job_requisition):
             passed += 1
 
-    score = clamp_open01(passed / max(1, float(total)), epsilon=1e-6)
+    score = clamp_open01(passed / max(1, float(total)), epsilon=SCORE_MIN)
     return GraderSubscore(
         name="hard_requirement_compliance",
         score=score,
@@ -97,9 +97,12 @@ def _final_decision_quality(task: TaskDefinition, state: EnvironmentState) -> Gr
 
     non_offer_pool = [cid for cid in task.candidate_ids if cid != offer_id]
     decided = [cid for cid in non_offer_pool if cid in rejected or cid in held]
-    closure = clamp_open01(len(decided) / max(1, float(len(non_offer_pool))), epsilon=1e-6)
+    closure = clamp_open01(len(decided) / max(1, float(len(non_offer_pool))), epsilon=SCORE_MIN)
 
-    score = clamp_open01((0.45 * offer_match) + (0.25 * band_match) + (0.15 * exclusivity) + (0.15 * closure), epsilon=1e-6)
+    score = clamp_open01(
+        (0.45 * offer_match) + (0.25 * band_match) + (0.15 * exclusivity) + (0.15 * closure),
+        epsilon=SCORE_MIN,
+    )
     return GraderSubscore(
         name="final_decision_quality",
         score=score,
@@ -134,11 +137,11 @@ def _consistency_and_justification(task: TaskDefinition, state: EnvironmentState
     summary_coverage = SCORE_MIN
     if state.interview_advances:
         covered = [cid for cid in state.interview_advances if cid in state.fit_summaries]
-        summary_coverage = clamp_open01(len(covered) / float(len(state.interview_advances)), epsilon=1e-6)
+        summary_coverage = clamp_open01(len(covered) / float(len(state.interview_advances)), epsilon=SCORE_MIN)
 
     score = clamp_open01(
         (0.35 * justification_score) + (0.25 * in_advances) + (0.20 * band_consistency) + (0.20 * summary_coverage),
-        epsilon=1e-6,
+        epsilon=SCORE_MIN,
     )
     return GraderSubscore(
         name="consistency_and_justification",
@@ -183,15 +186,15 @@ def _feedback_alignment(state: EnvironmentState) -> GraderSubscore:
     best_feedback = max(by_candidate.values())
     offered = decision.offer_candidate_id or ""
     offered_feedback = by_candidate.get(offered, SCORE_MIN)
-    relative = SCORE_MIN if best_feedback == 0 else clamp_open01(offered_feedback / best_feedback, epsilon=1e-6)
+    relative = SCORE_MIN if best_feedback == 0 else clamp_open01(offered_feedback / best_feedback, epsilon=SCORE_MIN)
 
     rec_bonus = 0
     for row in state.feedback.get(offered, []):
         mapped = {"advance": SCORE_MAX, "hold": 0.6, "reject": SCORE_MIN}.get(row.recommendation.lower(), 0.4)
         rec_bonus += mapped
-    rec_bonus = clamp_open01(rec_bonus / max(1, float(len(state.feedback.get(offered, [])))), epsilon=1e-6)
+    rec_bonus = clamp_open01(rec_bonus / max(1, float(len(state.feedback.get(offered, [])))), epsilon=SCORE_MIN)
 
-    score = clamp_open01((0.75 * relative) + (0.25 * rec_bonus), epsilon=1e-6)
+    score = clamp_open01((0.75 * relative) + (0.25 * rec_bonus), epsilon=SCORE_MIN)
     return GraderSubscore(
         name="feedback_alignment",
         score=score,
@@ -226,7 +229,7 @@ def _fairness_and_process_guardrails(task: TaskDefinition, state: EnvironmentSta
         + (0.22 * advance_bound)
         + (0.20 * offer_band_ok)
         + (0.10 * stage_consistency),
-        epsilon=1e-6,
+        epsilon=SCORE_MIN,
     )
     return GraderSubscore(
         name="fairness_and_process_guardrails",
@@ -244,7 +247,7 @@ def _efficiency(task: TaskDefinition, state: EnvironmentState) -> GraderSubscore
 
     used_steps = max(0, state.step_index - 3)
     usable_budget = max(1, task.max_steps - 3)
-    score = clamp_open01(SCORE_MAX - (used_steps / float(usable_budget)), epsilon=1e-6)
+    score = clamp_open01(SCORE_MAX - (used_steps / float(usable_budget)), epsilon=SCORE_MIN)
     return GraderSubscore(
         name="efficiency",
         score=score,
@@ -258,7 +261,7 @@ def _bias_audit_score(
     candidates: Dict[str, CandidateProfile],
 ) -> tuple[GraderSubscore, BiasAuditResult]:
     audit = run_bias_audit(task, state, candidates)
-    score = clamp_open01(audit.overall_score, epsilon=1e-6)
+    score = clamp_open01(audit.overall_score, epsilon=SCORE_MIN)
     return (
         GraderSubscore(
             name="bias_audit",
@@ -282,7 +285,7 @@ def _llm_decision_quality(
     return (
         GraderSubscore(
             name="llm_decision_quality",
-            score=clamp_open01(detail.score, epsilon=1e-6),
+            score=clamp_open01(detail.score, epsilon=SCORE_MIN),
             rationale=f"source={detail.source}; {detail.rationale}",
         ),
         detail,
@@ -311,12 +314,12 @@ def grade_task_state(
     for idx, item in enumerate(subscores):
         subscores[idx] = GraderSubscore(
             name=item.name,
-            score=clamp_open01(item.score, epsilon=1e-2),
+            score=clamp_open01(item.score, epsilon=SCORE_MIN),
             rationale=item.rationale,
         )
 
     llm_detail = LLMScoreDetail(
-        score=clamp_open01(llm_detail.score, epsilon=1e-2),
+        score=clamp_open01(llm_detail.score, epsilon=SCORE_MIN),
         rationale=llm_detail.rationale,
         source=llm_detail.source,
     )
@@ -338,7 +341,7 @@ def grade_task_state(
     for item in subscores:
         final_score += weight[item.name] * item.score
     # Keep task-level score comfortably inside strict (0, 1), even under coarse rounding.
-    final_score = clamp_open01(final_score, epsilon=1e-2)
+    final_score = clamp_open01(final_score, epsilon=SCORE_MIN)
 
     summary = (
         f"Task {task.task_id} scored {final_score:.3f} with strongest signal "
@@ -359,5 +362,5 @@ def grade_progress(
 ) -> float:
     graded = grade_task_state(task, state, candidates)
     if state.final_decision is None:
-        return clamp_open01(graded.final_score * 0.85, epsilon=1e-2)
-    return clamp_open01(graded.final_score, epsilon=1e-2)
+        return clamp_open01(graded.final_score * 0.85, epsilon=SCORE_MIN)
+    return clamp_open01(graded.final_score, epsilon=SCORE_MIN)

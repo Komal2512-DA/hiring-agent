@@ -311,8 +311,8 @@ def grade_task_state(
     final_score = 0.0
     for item in subscores:
         final_score += weight[item.name] * item.score
-    # Task-level score is kept in strict (0, 1) to satisfy strict evaluator bounds.
-    final_score = clamp_open01(final_score)
+    # Keep task-level score comfortably inside strict (0, 1), even under coarse rounding.
+    final_score = clamp_open01(final_score, epsilon=1e-2)
 
     summary = (
         f"Task {task.task_id} scored {final_score:.3f} with strongest signal "
@@ -333,5 +333,5 @@ def grade_progress(
 ) -> float:
     graded = grade_task_state(task, state, candidates)
     if state.final_decision is None:
-        return clamp_open01(graded.final_score * 0.85)
-    return clamp_open01(graded.final_score)
+        return clamp_open01(graded.final_score * 0.85, epsilon=1e-2)
+    return clamp_open01(graded.final_score, epsilon=1e-2)

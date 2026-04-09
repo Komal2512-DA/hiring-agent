@@ -54,3 +54,5 @@ def test_final_score_is_always_strict_open_interval():
 def test_clamp_open01_boundaries():
     assert clamp_open01(0.0) > 0.0
     assert clamp_open01(1.0) < 1.0
+    assert clamp_open01(0.0, epsilon=1e-2) == 1e-2
+    assert clamp_open01(1.0, epsilon=1e-2) == 0.99

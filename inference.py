@@ -12,7 +12,7 @@ from app.env import HiringOpenEnv
 from app.graders import grade_task_state
 from app.models import Action, ActionType, RewardOutput, TaskDefinition
 from app.policy import build_fit_summary, choose_advances, choose_offer_candidate, choose_shortlist
-from app.utils import OpenAIJustificationHelper, compact_json
+from app.utils import OpenAIJustificationHelper, clamp_open01, compact_json
 
 
 def _bool_text(value: bool) -> str:
@@ -52,9 +52,10 @@ def _print_step(step_index: int, action: Action, observation, reward: RewardOutp
 
 
 def _print_end(task_id: str, final_score: float, result_summary: str) -> None:
+    safe_final = clamp_open01(final_score, epsilon=1e-5)
     print("[END]")
     print(f"task_id={task_id}")
-    print(f"final_score={final_score:.6f}")
+    print(f"final_score={safe_final:.6f}")
     print(f"result_summary={result_summary}")
     print()
 
@@ -62,18 +63,23 @@ def _print_end(task_id: str, final_score: float, result_summary: str) -> None:
 def _build_result_summary(graded) -> str:
     bias = graded.bias_audit
     llm = graded.llm_score_detail
+    def _safe(value: float | None) -> float | None:
+        if value is None:
+            return None
+        return round(clamp_open01(value, epsilon=1e-5), 6)
+
     payload = {
         "summary": graded.summary,
         "top_subscore": max(graded.subscores, key=lambda s: s.score).name if graded.subscores else "",
         "llm_score": {
-            "score": round(llm.score, 6) if llm else None,
+            "score": _safe(llm.score) if llm else None,
             "source": llm.source if llm else None,
             "rationale": llm.rationale if llm else None,
         },
         "bias_audit": {
             "dimension": bias.audited_dimension if bias else None,
-            "overall_score": round(bias.overall_score, 6) if bias else None,
-            "adverse_impact_ratio": round(bias.adverse_impact_ratio, 6) if bias else None,
+            "overall_score": _safe(bias.overall_score) if bias else None,
+            "adverse_impact_ratio": _safe(bias.adverse_impact_ratio) if bias else None,
             "passed": bias.passed if bias else None,
             "flagged_metrics": bias.flagged_metrics if bias else [],
             "summary": bias.summary if bias else None,

@@ -8,7 +8,7 @@ from openai import OpenAI
 
 from app.config import get_settings
 from app.models import CandidateProfile, EnvironmentState, LLMScoreDetail, TaskDefinition
-from app.utils import clamp01
+from app.utils import clamp01, clamp_open01
 
 
 def _extract_json_object(text: str) -> Optional[Dict[str, object]]:
@@ -51,7 +51,11 @@ class DecisionLLMScorer:
     def _fallback(self, task: TaskDefinition, state: EnvironmentState, candidates: Dict[str, CandidateProfile], source: str) -> LLMScoreDetail:
         decision = state.final_decision
         if decision is None:
-            return LLMScoreDetail(score=0.0, rationale="No final decision for LLM scoring.", source=source)
+            return LLMScoreDetail(
+                score=clamp_open01(0.0, epsilon=1e-2),
+                rationale="No final decision for LLM scoring.",
+                source=source,
+            )
 
         offer = decision.offer_candidate_id or ""
         offer_match = 1.0 if offer == task.expected_offer_candidate_id else 0.0
@@ -66,12 +70,16 @@ class DecisionLLMScorer:
             f"fallback_scoring offer_match={offer_match:.2f}, band_match={band_match:.2f}, "
             f"justification={justification_score:.2f}, evidence={evidence_score:.2f}"
         )
-        return LLMScoreDetail(score=round(score, 6), rationale=rationale, source=source)
+        return LLMScoreDetail(score=round(clamp_open01(score, epsilon=1e-2), 6), rationale=rationale, source=source)
 
     def score(self, task: TaskDefinition, state: EnvironmentState, candidates: Dict[str, CandidateProfile]) -> LLMScoreDetail:
         decision = state.final_decision
         if decision is None:
-            return LLMScoreDetail(score=0.0, rationale="No final decision for LLM scoring.", source="disabled")
+            return LLMScoreDetail(
+                score=clamp_open01(0.0, epsilon=1e-2),
+                rationale="No final decision for LLM scoring.",
+                source="disabled",
+            )
 
         if not self.enabled or self.client is None:
             return self._fallback(task, state, candidates, source="disabled")
@@ -113,7 +121,11 @@ class DecisionLLMScorer:
             if parsed:
                 score_val = clamp01(float(parsed.get("score", 0.0)))
                 rationale = str(parsed.get("rationale", "llm_scored"))
-                return LLMScoreDetail(score=round(score_val, 6), rationale=rationale, source="llm")
+                return LLMScoreDetail(
+                    score=round(clamp_open01(score_val, epsilon=1e-2), 6),
+                    rationale=rationale,
+                    source="llm",
+                )
         except Exception:
             pass
 

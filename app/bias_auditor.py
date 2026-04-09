@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, Iterable, List, Tuple
 
 from app.models import BiasAuditResult, BiasMetric, CandidateProfile, EnvironmentState, TaskDefinition
-from app.utils import candidate_hard_filter, clamp01
+from app.utils import candidate_hard_filter, clamp01, clamp_open01
 
 
 def _normalize_gender(value: str | None) -> str | None:
@@ -109,7 +109,7 @@ def run_bias_audit(
 
     shortlist_rates = _group_rate(pool_ids, state.shortlist, group_map)
     shortlist_disparity = _disparity_from_rates(shortlist_rates)
-    shortlist_parity_score = clamp01(1.0 - shortlist_disparity)
+    shortlist_parity_score = clamp_open01(1.0 - shortlist_disparity, epsilon=1e-2)
 
     eligible_ids = [
         cid
@@ -119,11 +119,11 @@ def run_bias_audit(
     advance_population = eligible_ids if eligible_ids else pool_ids
     advance_rates = _group_rate(advance_population, state.interview_advances, group_map)
     advance_disparity = _disparity_from_rates(advance_rates)
-    advance_parity_score = clamp01(1.0 - advance_disparity)
+    advance_parity_score = clamp_open01(1.0 - advance_disparity, epsilon=1e-2)
 
     air_shortlist = _adverse_impact_ratio(shortlist_rates)
     air_advance = _adverse_impact_ratio(advance_rates)
-    air_min = min(air_shortlist, air_advance)
+    air_min = clamp_open01(min(air_shortlist, air_advance), epsilon=1e-2)
 
     metrics: List[BiasMetric] = [
         BiasMetric(
@@ -157,7 +157,7 @@ def run_bias_audit(
     ]
 
     flagged = [m.metric_name for m in metrics if not m.passed]
-    overall = clamp01((0.40 * shortlist_parity_score) + (0.35 * advance_parity_score) + (0.25 * air_min))
+    overall = clamp_open01((0.40 * shortlist_parity_score) + (0.35 * advance_parity_score) + (0.25 * air_min), epsilon=1e-2)
     passed = len(flagged) == 0
 
     summary = (
@@ -179,4 +179,3 @@ def run_bias_audit(
         metrics=metrics,
         summary=summary,
     )
-

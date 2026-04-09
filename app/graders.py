@@ -294,6 +294,19 @@ def grade_task_state(
         llm_subscore,
         _efficiency(task, state),
     ]
+    # Keep all reported grading dimensions inside strict (0, 1) as well.
+    for idx, item in enumerate(subscores):
+        subscores[idx] = GraderSubscore(
+            name=item.name,
+            score=clamp_open01(item.score, epsilon=1e-2),
+            rationale=item.rationale,
+        )
+
+    llm_detail = LLMScoreDetail(
+        score=clamp_open01(llm_detail.score, epsilon=1e-2),
+        rationale=llm_detail.rationale,
+        source=llm_detail.source,
+    )
 
     weight = {
         "hard_requirement_compliance": 0.14,

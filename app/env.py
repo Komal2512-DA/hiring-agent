@@ -21,7 +21,7 @@ from app.models import (
 )
 from app.policy import build_fit_summary
 from app.tasks import get_task_registry
-from app.utils import clamp_open01, heuristic_candidate_score
+from app.utils import SCORE_MIN, clamp_open01, heuristic_candidate_score
 
 
 class HiringOpenEnv:
@@ -63,7 +63,7 @@ class HiringOpenEnv:
             bias_audit=None,
             step_index=0,
             done=False,
-            previous_progress_score=clamp_open01(0.0, epsilon=1e-5),
+            previous_progress_score=clamp_open01(SCORE_MIN, epsilon=SCORE_MIN),
         )
         self._state.bias_audit = run_bias_audit(self._state.task, self._state, self._state.candidates)
         return self._build_observation("Environment reset. Ready for hiring actions.")
@@ -82,13 +82,13 @@ class HiringOpenEnv:
         if self._state.done:
             final = clamp_open01(
                 grade_task_state(self._state.task, self._state, self._state.candidates).final_score,
-                epsilon=1e-5,
+                epsilon=SCORE_MIN,
             )
             observation = self._build_observation("Task already completed.")
             reward = RewardOutput(
-                step_reward=round(clamp_open01(0.0, epsilon=1e-5), 6),
-                progress_score=round(clamp_open01(final, epsilon=1e-5), 6),
-                final_score=round(clamp_open01(final, epsilon=1e-5), 6),
+                step_reward=round(clamp_open01(SCORE_MIN, epsilon=SCORE_MIN), 6),
+                progress_score=round(clamp_open01(final, epsilon=SCORE_MIN), 6),
+                final_score=round(clamp_open01(final, epsilon=SCORE_MIN), 6),
             )
             return observation, reward
 
@@ -113,24 +113,24 @@ class HiringOpenEnv:
 
         progress_score = clamp_open01(
             grade_progress(self._state.task, self._state, self._state.candidates),
-            epsilon=1e-5,
+            epsilon=SCORE_MIN,
         )
         final_score: Optional[float] = None
         if self._state.done:
             final_score = clamp_open01(
                 grade_task_state(self._state.task, self._state, self._state.candidates).final_score,
-                epsilon=1e-5,
+                epsilon=SCORE_MIN,
             )
             progress_score = final_score
 
-        step_reward = clamp_open01(progress_score - previous_progress, epsilon=1e-5)
-        self._state.previous_progress_score = clamp_open01(progress_score, epsilon=1e-5)
+        step_reward = clamp_open01(progress_score - previous_progress, epsilon=SCORE_MIN)
+        self._state.previous_progress_score = clamp_open01(progress_score, epsilon=SCORE_MIN)
 
         observation = self._build_observation(message)
         reward = RewardOutput(
             step_reward=round(step_reward, 6),
-            progress_score=round(clamp_open01(progress_score, epsilon=1e-5), 6),
-            final_score=round(clamp_open01(final_score, epsilon=1e-5), 6) if final_score is not None else None,
+            progress_score=round(clamp_open01(progress_score, epsilon=SCORE_MIN), 6),
+            final_score=round(clamp_open01(final_score, epsilon=SCORE_MIN), 6) if final_score is not None else None,
         )
         return observation, reward
 
@@ -322,6 +322,6 @@ class HiringOpenEnv:
             done=self._state.done,
             pipeline_overview=pipeline_overview,
             candidate_views=views,
-            current_progress_score=round(clamp_open01(self._state.previous_progress_score, epsilon=1e-5), 6),
+            current_progress_score=round(clamp_open01(self._state.previous_progress_score, epsilon=SCORE_MIN), 6),
             message=message,
         )

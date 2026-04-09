@@ -20,6 +20,7 @@ from app.graders import grade_task_state
 from app.main import app
 from app.models import Action, ActionType
 from app.policy import choose_advances, choose_offer_candidate, choose_shortlist
+from app.utils import SCORE_MAX, SCORE_MIN
 
 
 @dataclass(frozen=True)
@@ -144,8 +145,10 @@ def _check_env_and_graders() -> List[str]:
 
     for task in tasks:
         score = _run_baseline_once(env, task.task_id)
-        if not (0.0 < score < 1.0):
-            errors.append(f"Task {task.task_id} grader score must be strictly in (0,1): {score}")
+        if not (SCORE_MIN <= score <= SCORE_MAX):
+            errors.append(
+                f"Task {task.task_id} grader score must be in [{SCORE_MIN}, {SCORE_MAX}]: {score}"
+            )
 
     return errors
 

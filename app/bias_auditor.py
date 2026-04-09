@@ -160,11 +160,16 @@ def run_bias_audit(
     overall = clamp_open01((0.40 * shortlist_parity_score) + (0.35 * advance_parity_score) + (0.25 * air_min), epsilon=SCORE_MIN)
     passed = len(flagged) == 0
 
+    # Keep textual diagnostics away from rounded boundary literals such as 1.000.
+    overall_text = clamp_open01(overall, epsilon=SCORE_MIN)
+    shortlist_text = clamp_open01(shortlist_parity_score, epsilon=SCORE_MIN)
+    advance_text = clamp_open01(advance_parity_score, epsilon=SCORE_MIN)
+    air_text = clamp_open01(air_min, epsilon=SCORE_MIN)
     summary = (
-        f"Bias audit on {dimension}: overall={overall:.3f}, "
-        f"shortlist_parity={shortlist_parity_score:.3f}, "
-        f"advance_parity={advance_parity_score:.3f}, "
-        f"min_air={air_min:.3f}, flagged={flagged or ['none']}."
+        f"Bias audit on {dimension}: overall={overall_text:.6f}, "
+        f"shortlist_parity={shortlist_text:.6f}, "
+        f"advance_parity={advance_text:.6f}, "
+        f"min_air={air_text:.6f}, flagged={flagged or ['none']}."
     )
 
     return BiasAuditResult(

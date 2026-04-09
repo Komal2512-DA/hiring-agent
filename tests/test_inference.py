@@ -15,17 +15,19 @@ def test_inference_stdout_structure():
     assert "[START]" in output
     assert "[STEP]" in output
     assert "[END]" in output
-    assert "task_id=" in output
-    assert "final_score=" in output
-
-    assert "step_index=" in output
-    assert "action_type=" in output
-    assert "action_payload=" in output
-    assert "observation_summary=" in output
+    assert "task=" in output
+    assert "env=" in output
+    assert "model=" in output
+    assert "step=" in output
+    assert "action=" in output
     assert "reward=" in output
     assert "done=" in output
+    assert "error=" in output
+    assert "success=" in output
+    assert "steps=" in output
+    assert "rewards=" in output
 
-    assert "action_type=shortlist_candidates" in output
-    assert "action_type=advance_stage" in output
-    assert "action_type=finalize_decision" in output
+    assert "action=shortlist_candidates(" in output
+    assert "action=advance_stage(" in output
+    assert "action=finalize_decision(" in output
 

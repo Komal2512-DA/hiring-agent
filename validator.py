@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -283,53 +284,58 @@ def _check_openenv_validate(root: Path, timeout_seconds: int) -> List[str]:
 
 def _parse_inference_output_for_format(output: str) -> List[str]:
     errors: List[str] = []
-    lines = [line.rstrip("\n") for line in output.splitlines()]
-
-    i = 0
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
     start_blocks = 0
+    end_blocks = 0
 
-    while i < len(lines):
-        line = lines[i].strip()
-
-        if line == "[START]":
+    for line in lines:
+        if line.startswith("[START]"):
             start_blocks += 1
-            expected = ["task_id=", "task_name="]
-            for idx, prefix in enumerate(expected, start=1):
-                if i + idx >= len(lines) or not lines[i + idx].startswith(prefix):
-                    errors.append("[START] block field order mismatch.")
-            i += 3
+            for token in ("task=", "env=", "model="):
+                if token not in line:
+                    errors.append(f"[START] line missing token '{token}': {line}")
             continue
 
-        if line == "[STEP]":
-            expected = [
-                "step_index=",
-                "action_type=",
-                "action_payload=",
-                "observation_summary=",
-                "reward=",
-                "done=",
-            ]
-            for idx, prefix in enumerate(expected, start=1):
-                if i + idx >= len(lines) or not lines[i + idx].startswith(prefix):
-                    errors.append("[STEP] block field order mismatch.")
+        if line.startswith("[STEP]"):
+            for token in ("step=", "action=", "reward=", "done=", "error="):
+                if token not in line:
+                    errors.append(f"[STEP] line missing token '{token}': {line}")
                     break
-            i += 7
+
+            reward_part = line.split("reward=", 1)[1].split(" ", 1)[0] if "reward=" in line else ""
+            if reward_part and not re.fullmatch(r"\d+\.\d{2}", reward_part):
+                errors.append(f"[STEP] reward must be 2-decimal format: {line}")
+
+            done_part = line.split("done=", 1)[1].split(" ", 1)[0] if "done=" in line else ""
+            if done_part and done_part not in {"true", "false"}:
+                errors.append(f"[STEP] done must be lowercase true/false: {line}")
             continue
 
-        if line == "[END]":
-            expected = ["task_id=", "final_score=", "result_summary="]
-            for idx, prefix in enumerate(expected, start=1):
-                if i + idx >= len(lines) or not lines[i + idx].startswith(prefix):
-                    errors.append("[END] block field order mismatch.")
-            i += 4
+        if line.startswith("[END]"):
+            end_blocks += 1
+            for token in ("success=", "steps=", "rewards="):
+                if token not in line:
+                    errors.append(f"[END] line missing token '{token}': {line}")
+                    break
+
+            success_part = line.split("success=", 1)[1].split(" ", 1)[0] if "success=" in line else ""
+            if success_part and success_part not in {"true", "false"}:
+                errors.append(f"[END] success must be lowercase true/false: {line}")
+
+            rewards_part = line.split("rewards=", 1)[1] if "rewards=" in line else ""
+            if rewards_part:
+                for reward_token in rewards_part.split(","):
+                    if not re.fullmatch(r"\d+\.\d{2}", reward_token.strip()):
+                        errors.append(f"[END] rewards must be comma-separated 2-decimal values: {line}")
+                        break
             continue
 
-        if line:
-            errors.append(f"Unexpected non-structured log line: {line}")
-        i += 1
+        errors.append(f"Unexpected non-structured log line: {line}")
 
-    if start_blocks == 0:
+    if start_blocks == 0 or end_blocks == 0:
         errors.append("No [START] blocks found in inference output.")
+    elif start_blocks != end_blocks:
+        errors.append(f"Mismatched episode boundaries: [START]={start_blocks}, [END]={end_blocks}")
 
     return errors
 

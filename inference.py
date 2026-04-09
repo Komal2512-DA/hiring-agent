@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import traceback
 from typing import Iterable, List
 
 from openai import OpenAI
@@ -14,6 +15,8 @@ from app.models import Action, ActionType, RewardOutput, TaskDefinition
 from app.policy import choose_advances, choose_offer_candidate, choose_shortlist
 from app.utils import OpenAIJustificationHelper, compact_json
 
+BENCHMARK_NAME = "hiring-agent-openenv"
+
 
 def _bool_text(value: bool) -> str:
     return "true" if value else "false"
@@ -23,67 +26,25 @@ def _submission_range(value: float) -> float:
     return max(0.01, min(0.99, float(value)))
 
 
-def _observation_summary(observation) -> str:
-    top = ""
-    if observation.candidate_views:
-        ranked = sorted(observation.candidate_views, key=lambda row: row.weighted_fit_score, reverse=True)
-        top = ranked[0].candidate_id
-    summary = {
-        "message": observation.message,
-        "progress": round(observation.current_progress_score, 2),
-        "top_candidate": top,
-        "done": observation.done,
-    }
-    return compact_json(summary)
+def _print_start(task: TaskDefinition, model_name: str) -> None:
+    print(f"[START] task={task.task_id} env={BENCHMARK_NAME} model={model_name}")
 
 
-def _print_start(task: TaskDefinition) -> None:
-    print("[START]")
-    print(f"task_id={task.task_id}")
-    print(f"task_name={task.name}")
-    print()
-
-
-def _print_step(
-    step_index: int,
-    action: Action,
-    observation,
-    reward: RewardOutput,
-    printed_reward_total: float,
-) -> float:
+def _print_step(step_index: int, action: Action, reward: RewardOutput, error: str | None) -> float:
     displayed_reward = _submission_range(reward.step_reward)
-    remaining_budget = max(0.01, 0.99 - printed_reward_total)
-    displayed_reward = min(displayed_reward, remaining_budget)
-    print("[STEP]")
-    print(f"step_index={step_index}")
-    print(f"action_type={action.action_type.value}")
-    print(f"action_payload={compact_json(action.payload)}")
-    print(f"observation_summary={_observation_summary(observation)}")
-    print(f"reward={displayed_reward:.2f}")
-    print(f"done={_bool_text(observation.done)}")
-    print()
-    return printed_reward_total + displayed_reward
+    action_str = f"{action.action_type.value}({compact_json(action.payload)})"
+    error_text = "null" if error is None else error.replace("\n", " ").strip()
+    done_val = getattr(reward, "_done_value", False)
+    print(
+        f"[STEP] step={step_index} action={action_str} "
+        f"reward={displayed_reward:.2f} done={_bool_text(done_val)} error={error_text}"
+    )
+    return displayed_reward
 
 
-def _print_end(task_id: str, final_score: float, result_summary: str) -> None:
-    safe_final = _submission_range(final_score)
-    print("[END]")
-    print(f"task_id={task_id}")
-    print(f"final_score={safe_final:.2f}")
-    print(f"result_summary={result_summary}")
-    print()
-
-
-def _build_result_summary(graded) -> str:
-    bias = graded.bias_audit
-    llm = graded.llm_score_detail
-    payload = {
-        "summary": "task_completed",
-        "top_subscore": max(graded.subscores, key=lambda s: s.score).name if graded.subscores else "n/a",
-        "llm_source": llm.source if llm else "n/a",
-        "bias_dimension": bias.audited_dimension if bias else "n/a",
-    }
-    return compact_json(payload)
+def _print_end(success: bool, steps: int, rewards: List[float]) -> None:
+    rewards_text = ",".join(f"{_submission_range(value):.2f}" for value in rewards)
+    print(f"[END] success={_bool_text(success)} steps={steps} rewards={rewards_text}")
 
 
 def _build_action_plan(task: TaskDefinition, env: HiringOpenEnv, helper: OpenAIJustificationHelper) -> List[Action]:
@@ -157,29 +118,44 @@ def _probe_litellm_proxy(settings) -> None:
         pass
 
 
-def run_task(env: HiringOpenEnv, task: TaskDefinition, helper: OpenAIJustificationHelper) -> float:
+def run_task(env: HiringOpenEnv, task: TaskDefinition, helper: OpenAIJustificationHelper, model_name: str) -> float:
     env.reset(task.task_id)
-    _print_start(task)
+    _print_start(task, model_name)
 
     actions = _build_action_plan(task, env, helper)
-    last_reward: RewardOutput | None = None
-    printed_reward_total = 0.0
+    rewards: List[float] = []
+    success = False
+    step_count = 0
 
-    for step_index, action in enumerate(actions, start=1):
-        observation, reward = env.step(action)
-        last_reward = reward
-        printed_reward_total = _print_step(step_index, action, observation, reward, printed_reward_total)
-        if observation.done:
-            break
+    try:
+        for step_index, action in enumerate(actions, start=1):
+            step_count = step_index
+            try:
+                observation, reward = env.step(action)
+                # Attach done flag for formatter without changing model schema.
+                setattr(reward, "_done_value", observation.done)
+                rewards.append(_print_step(step_index, action, reward, error=None))
+                if observation.done:
+                    success = True
+                    break
+            except Exception as action_exc:
+                fallback_reward = RewardOutput(step_reward=0.01, progress_score=0.01, final_score=None)
+                setattr(fallback_reward, "_done_value", False)
+                rewards.append(_print_step(step_index, action, fallback_reward, error=str(action_exc)))
+                success = False
+                break
+    except Exception:
+        success = False
+        if not rewards:
+            rewards.append(0.01)
+        _ = traceback.format_exc()
+    finally:
+        _print_end(success=success, steps=step_count, rewards=rewards)
 
+    # Keep existing internal score path available for callers/tests.
     current_state = env.state()
     graded = grade_task_state(current_state.task, current_state, current_state.candidates)
-    final_score = graded.final_score
-    if last_reward and last_reward.final_score is not None:
-        final_score = last_reward.final_score
-
-    _print_end(task.task_id, final_score, _build_result_summary(graded))
-    return final_score
+    return graded.final_score
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -213,7 +189,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
     for task in tasks:
-        run_task(env, task, helper)
+        run_task(env, task, helper, settings.model_name)
 
     return 0
 

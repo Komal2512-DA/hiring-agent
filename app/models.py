@@ -6,10 +6,8 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, model_validator
 
 
-def _strict_open01(value: float, epsilon: float = 1e-5) -> float:
-    lo = float(epsilon)
-    hi = 1.0 - lo
-    return max(lo, min(hi, float(value)))
+def _strict_open01(value: float, lower: float = 0.1, upper: float = 0.999999) -> float:
+    return max(float(lower), min(float(upper), float(value)))
 
 
 class OpenEnvModel(BaseModel):
@@ -18,7 +16,8 @@ class OpenEnvModel(BaseModel):
         for name, value in self.__dict__.items():
             if value is None:
                 continue
-            if "score" in name.lower() and isinstance(value, (int, float)):
+            lower_name = name.lower()
+            if ("score" in lower_name or lower_name.endswith("reward")) and isinstance(value, (int, float)):
                 setattr(self, name, _strict_open01(float(value)))
         return self
 

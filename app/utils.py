@@ -9,19 +9,24 @@ from openai import OpenAI
 from app.config import get_settings
 from app.models import CandidateProfile, JobRequisition
 
-SCORE_MIN = 1e-6
-SCORE_MAX = 0.999999
+SCORE_MIN = 0.01
+SCORE_MAX = 0.99
+SCORE_DECIMALS = 2
+
+
+def _quantize(value: float) -> float:
+    return round(float(value), SCORE_DECIMALS)
 
 
 def clamp01(value: float) -> float:
-    return max(SCORE_MIN, min(SCORE_MAX, float(value)))
+    return _quantize(max(SCORE_MIN, min(SCORE_MAX, float(value))))
 
 
-def clamp_open01(value: float, epsilon: float = 1e-6) -> float:
+def clamp_open01(value: float, epsilon: float = SCORE_MIN) -> float:
     """Clamp to strict open interval (0, 1) with evaluator-safe bounds."""
     lo = max(float(epsilon), SCORE_MIN)
     hi = SCORE_MAX
-    return max(lo, min(hi, float(value)))
+    return _quantize(max(lo, min(hi, float(value))))
 
 
 def timezone_overlap_hours(candidate_tz: int, team_tz: int) -> float:

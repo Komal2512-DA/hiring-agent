@@ -20,7 +20,7 @@ def _bool_text(value: bool) -> str:
 
 
 def _submission_range(value: float) -> float:
-    return max(1e-6, min(0.99, float(value)))
+    return max(0.01, min(0.99, float(value)))
 
 
 def _observation_summary(observation) -> str:
@@ -30,7 +30,7 @@ def _observation_summary(observation) -> str:
         top = ranked[0].candidate_id
     summary = {
         "message": observation.message,
-        "progress": round(observation.current_progress_score, 4),
+        "progress": round(observation.current_progress_score, 2),
         "top_candidate": top,
         "done": observation.done,
     }
@@ -52,14 +52,14 @@ def _print_step(
     printed_reward_total: float,
 ) -> float:
     displayed_reward = _submission_range(reward.step_reward)
-    remaining_budget = max(1e-6, 0.99 - printed_reward_total)
+    remaining_budget = max(0.01, 0.99 - printed_reward_total)
     displayed_reward = min(displayed_reward, remaining_budget)
     print("[STEP]")
     print(f"step_index={step_index}")
     print(f"action_type={action.action_type.value}")
     print(f"action_payload={compact_json(action.payload)}")
     print(f"observation_summary={_observation_summary(observation)}")
-    print(f"reward={displayed_reward:.6f}")
+    print(f"reward={displayed_reward:.2f}")
     print(f"done={_bool_text(observation.done)}")
     print()
     return printed_reward_total + displayed_reward
@@ -69,7 +69,7 @@ def _print_end(task_id: str, final_score: float, result_summary: str) -> None:
     safe_final = _submission_range(final_score)
     print("[END]")
     print(f"task_id={task_id}")
-    print(f"final_score={safe_final:.6f}")
+    print(f"final_score={safe_final:.2f}")
     print(f"result_summary={result_summary}")
     print()
 

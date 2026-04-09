@@ -23,8 +23,8 @@ from app.utils import (
 )
 
 _LLM_SCORER = DecisionLLMScorer()
-SCORE_MIN = 0.1
-SCORE_MAX = 0.999999
+SCORE_MIN = 0.01
+SCORE_MAX = 0.99
 SCORE_MID = 0.5
 
 
@@ -62,7 +62,7 @@ def _shortlist_quality(task: TaskDefinition, state: EnvironmentState) -> GraderS
     return GraderSubscore(
         name="shortlist_quality",
         score=score,
-        rationale=f"F1 overlap with expected shortlist is {score:.3f}.",
+        rationale=f"F1 overlap with expected shortlist is {score:.2f}.",
     )
 
 
@@ -71,7 +71,7 @@ def _progression_quality(task: TaskDefinition, state: EnvironmentState) -> Grade
     return GraderSubscore(
         name="progression_quality",
         score=score,
-        rationale=f"F1 overlap with expected interview advances is {score:.3f}.",
+        rationale=f"F1 overlap with expected interview advances is {score:.2f}.",
     )
 
 
@@ -344,7 +344,7 @@ def grade_task_state(
     final_score = clamp_open01(final_score, epsilon=SCORE_MIN)
 
     summary = (
-        f"Task {task.task_id} scored {final_score:.3f} with strongest signal "
+        f"Task {task.task_id} scored {final_score:.2f} with strongest signal "
         f"from {max(subscores, key=lambda s: s.score).name}."
     )
     return GraderResult(

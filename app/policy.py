@@ -58,7 +58,7 @@ def build_fit_summary(task: TaskDefinition, candidate: CandidateProfile) -> str:
     hard_pass = candidate_hard_filter(candidate, task.job_requisition)
     score = heuristic_candidate_score(candidate, task.job_requisition)
     return (
-        f"hard_pass={str(hard_pass).lower()}, fit_score={score:.3f}, "
+        f"hard_pass={str(hard_pass).lower()}, fit_score={score:.2f}, "
         f"notice={candidate.notice_period_days}d, expected_comp={candidate.expected_compensation_lpa}LPA"
     )
 

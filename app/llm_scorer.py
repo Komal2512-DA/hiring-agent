@@ -75,7 +75,7 @@ class DecisionLLMScorer:
             f"fallback_scoring offer_match={offer_text:.2f}, band_match={band_text:.2f}, "
             f"justification={just_text:.2f}, evidence={evidence_text:.2f}"
         )
-        return LLMScoreDetail(score=round(clamp_open01(score, epsilon=SCORE_MIN), 6), rationale=rationale, source=source)
+        return LLMScoreDetail(score=round(clamp_open01(score, epsilon=SCORE_MIN), 2), rationale=rationale, source=source)
 
     def score(self, task: TaskDefinition, state: EnvironmentState, candidates: Dict[str, CandidateProfile]) -> LLMScoreDetail:
         decision = state.final_decision
@@ -108,7 +108,7 @@ class DecisionLLMScorer:
 
         prompt = (
             "You are evaluating hiring decision quality. "
-            "Score from 0.1 to 0.999999 based on requirement fit, evidence quality, policy consistency, "
+            "Score from 0.01 to 0.99 based on requirement fit, evidence quality, policy consistency, "
             "and compensation alignment. Return strict JSON only with keys: "
             "{\"score\": <float_0_to_1>, \"rationale\": \"short_reason\"}. "
             f"Context: {json.dumps(payload, separators=(',', ':'))}"
@@ -127,7 +127,7 @@ class DecisionLLMScorer:
                 score_val = clamp01(float(parsed.get("score", SCORE_MIN)))
                 rationale = str(parsed.get("rationale", "llm_scored"))
                 return LLMScoreDetail(
-                    score=round(clamp_open01(score_val, epsilon=SCORE_MIN), 6),
+                    score=round(clamp_open01(score_val, epsilon=SCORE_MIN), 2),
                     rationale=rationale,
                     source="llm",
                 )

@@ -128,16 +128,16 @@ def run_bias_audit(
     metrics: List[BiasMetric] = [
         BiasMetric(
             metric_name="shortlist_parity",
-            group_rates={k: round(v, 4) for k, v in shortlist_rates.items()},
-            disparity=round(shortlist_disparity, 4),
+            group_rates={k: round(v, 2) for k, v in shortlist_rates.items()},
+            disparity=round(shortlist_disparity, 2),
             threshold=parity_threshold,
             passed=shortlist_disparity <= parity_threshold,
             rationale="Difference between highest and lowest shortlist rates by audited group.",
         ),
         BiasMetric(
             metric_name="advance_parity",
-            group_rates={k: round(v, 4) for k, v in advance_rates.items()},
-            disparity=round(advance_disparity, 4),
+            group_rates={k: round(v, 2) for k, v in advance_rates.items()},
+            disparity=round(advance_disparity, 2),
             threshold=parity_threshold,
             passed=advance_disparity <= parity_threshold,
             rationale="Difference between highest and lowest interview-advance rates by audited group.",
@@ -145,11 +145,11 @@ def run_bias_audit(
         BiasMetric(
             metric_name="adverse_impact_ratio",
             group_rates={
-                "shortlist_air": round(air_shortlist, 4),
-                "advance_air": round(air_advance, 4),
-                "minimum_air": round(air_min, 4),
+                "shortlist_air": round(air_shortlist, 2),
+                "advance_air": round(air_advance, 2),
+                "minimum_air": round(air_min, 2),
             },
-            disparity=round(SCORE_MAX - air_min, 4),
+            disparity=round(SCORE_MAX - air_min, 2),
             threshold=adverse_impact_threshold,
             passed=air_min >= adverse_impact_threshold,
             rationale="Four-fifths style ratio check using group selection rates.",
@@ -166,19 +166,19 @@ def run_bias_audit(
     advance_text = clamp_open01(advance_parity_score, epsilon=SCORE_MIN)
     air_text = clamp_open01(air_min, epsilon=SCORE_MIN)
     summary = (
-        f"Bias audit on {dimension}: overall={overall_text:.6f}, "
-        f"shortlist_parity={shortlist_text:.6f}, "
-        f"advance_parity={advance_text:.6f}, "
-        f"min_air={air_text:.6f}, flagged={flagged or ['none']}."
+        f"Bias audit on {dimension}: overall={overall_text:.2f}, "
+        f"shortlist_parity={shortlist_text:.2f}, "
+        f"advance_parity={advance_text:.2f}, "
+        f"min_air={air_text:.2f}, flagged={flagged or ['none']}."
     )
 
     return BiasAuditResult(
         audited_dimension=dimension,
         sample_size=len(pool_ids),
-        adverse_impact_ratio=round(air_min, 6),
-        representation_parity_score=round(shortlist_parity_score, 6),
-        advancement_parity_score=round(advance_parity_score, 6),
-        overall_score=round(overall, 6),
+        adverse_impact_ratio=round(air_min, 2),
+        representation_parity_score=round(shortlist_parity_score, 2),
+        advancement_parity_score=round(advance_parity_score, 2),
+        overall_score=round(overall, 2),
         passed=passed,
         flagged_metrics=flagged,
         metrics=metrics,

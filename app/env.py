@@ -86,9 +86,9 @@ class HiringOpenEnv:
             )
             observation = self._build_observation("Task already completed.")
             reward = RewardOutput(
-                step_reward=round(clamp_open01(SCORE_MIN, epsilon=SCORE_MIN), 6),
-                progress_score=round(clamp_open01(final, epsilon=SCORE_MIN), 6),
-                final_score=round(clamp_open01(final, epsilon=SCORE_MIN), 6),
+                step_reward=round(clamp_open01(SCORE_MIN, epsilon=SCORE_MIN), 2),
+                progress_score=round(clamp_open01(final, epsilon=SCORE_MIN), 2),
+                final_score=round(clamp_open01(final, epsilon=SCORE_MIN), 2),
             )
             return observation, reward
 
@@ -128,9 +128,9 @@ class HiringOpenEnv:
 
         observation = self._build_observation(message)
         reward = RewardOutput(
-            step_reward=round(step_reward, 6),
-            progress_score=round(clamp_open01(progress_score, epsilon=SCORE_MIN), 6),
-            final_score=round(clamp_open01(final_score, epsilon=SCORE_MIN), 6) if final_score is not None else None,
+            step_reward=round(step_reward, 2),
+            progress_score=round(clamp_open01(progress_score, epsilon=SCORE_MIN), 2),
+            final_score=round(clamp_open01(final_score, epsilon=SCORE_MIN), 2) if final_score is not None else None,
         )
         return observation, reward
 
@@ -300,14 +300,14 @@ class HiringOpenEnv:
             summary = self._state.fit_summaries.get(cid)
             if not summary:
                 summary = (
-                    f"exp={profile.years_experience:.1f}, notice={profile.notice_period_days}d, "
-                    f"comp={profile.expected_compensation_lpa:.1f}"
+                    f"exp={profile.years_experience:.2f}, notice={profile.notice_period_days}d, "
+                    f"comp={profile.expected_compensation_lpa:.2f}"
                 )
             views.append(
                 ObservationCandidateView(
                     candidate_id=cid,
                     stage=self._state.stages[cid],
-                    weighted_fit_score=round(score, 6),
+                    weighted_fit_score=round(score, 2),
                     summary=summary,
                 )
             )
@@ -322,6 +322,6 @@ class HiringOpenEnv:
             done=self._state.done,
             pipeline_overview=pipeline_overview,
             candidate_views=views,
-            current_progress_score=round(clamp_open01(self._state.previous_progress_score, epsilon=SCORE_MIN), 6),
+            current_progress_score=round(clamp_open01(self._state.previous_progress_score, epsilon=SCORE_MIN), 2),
             message=message,
         )

@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, model_validator
 
 
-def _strict_open01(value: float, lower: float = 1e-6, upper: float = 0.999999) -> float:
-    return max(float(lower), min(float(upper), float(value)))
+def _strict_open01(value: float, lower: float = 0.01, upper: float = 0.99) -> float:
+    bounded = max(float(lower), min(float(upper), float(value)))
+    return round(bounded, 2)
 
 
 class OpenEnvModel(BaseModel):
@@ -211,7 +212,7 @@ class EnvironmentState(OpenEnvModel):
     bias_audit: Optional[BiasAuditResult] = None
     step_index: int = 0
     done: bool = False
-    previous_progress_score: float = 1e-5
+    previous_progress_score: float = 0.01
 
 
 class GraderSubscore(OpenEnvModel):

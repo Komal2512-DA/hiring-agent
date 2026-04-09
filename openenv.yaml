@@ -37,8 +37,8 @@ tasks:
 
 evaluation:
   normalized_score_range:
-    min: 0
-    max: 1
+    min: 0.01
+    max: 0.99
   requires_graders: true
   required_score_dimensions:
     - hard_requirement_compliance

@@ -313,7 +313,7 @@ def _parse_inference_output_for_format(output: str) -> List[str]:
 
         if line.startswith("[END]"):
             end_blocks += 1
-            for token in ("success=", "steps=", "rewards="):
+            for token in ("success=", "steps=", "rewards=", "final_score="):
                 if token not in line:
                     errors.append(f"[END] line missing token '{token}': {line}")
                     break
@@ -323,11 +323,17 @@ def _parse_inference_output_for_format(output: str) -> List[str]:
                 errors.append(f"[END] success must be lowercase true/false: {line}")
 
             rewards_part = line.split("rewards=", 1)[1] if "rewards=" in line else ""
+            if " final_score=" in rewards_part:
+                rewards_part = rewards_part.split(" final_score=", 1)[0]
             if rewards_part:
                 for reward_token in rewards_part.split(","):
                     if not re.fullmatch(r"\d+\.\d{2}", reward_token.strip()):
                         errors.append(f"[END] rewards must be comma-separated 2-decimal values: {line}")
                         break
+
+            final_part = line.split("final_score=", 1)[1].split(" ", 1)[0] if "final_score=" in line else ""
+            if final_part and not re.fullmatch(r"\d+\.\d{2}", final_part):
+                errors.append(f"[END] final_score must be 2-decimal format: {line}")
             continue
 
         errors.append(f"Unexpected non-structured log line: {line}")

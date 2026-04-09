@@ -26,8 +26,14 @@ def _submission_range(value: float) -> float:
     return max(0.01, min(0.99, float(value)))
 
 
+def _stdout_model_name(model_name: str) -> str:
+    # Keep START line parser-friendly and avoid numeric literals being misread as scores.
+    cleaned = "".join(ch for ch in model_name if ch.isalpha() or ch in {"-", "_"}).strip("_-")
+    return cleaned or "configured_model"
+
+
 def _print_start(task: TaskDefinition, model_name: str) -> None:
-    print(f"[START] task={task.task_id} env={BENCHMARK_NAME} model={model_name}")
+    print(f"[START] task={task.task_id} env={BENCHMARK_NAME} model={_stdout_model_name(model_name)}")
 
 
 def _print_step(step_index: int, action: Action, reward: RewardOutput, error: str | None) -> float:
@@ -42,9 +48,12 @@ def _print_step(step_index: int, action: Action, reward: RewardOutput, error: st
     return displayed_reward
 
 
-def _print_end(success: bool, steps: int, rewards: List[float]) -> None:
+def _print_end(success: bool, steps: int, rewards: List[float], final_score: float) -> None:
     rewards_text = ",".join(f"{_submission_range(value):.2f}" for value in rewards)
-    print(f"[END] success={_bool_text(success)} steps={steps} rewards={rewards_text}")
+    print(
+        f"[END] success={_bool_text(success)} steps={steps} "
+        f"rewards={rewards_text} final_score={_submission_range(final_score):.2f}"
+    )
 
 
 def _build_action_plan(task: TaskDefinition, env: HiringOpenEnv, helper: OpenAIJustificationHelper) -> List[Action]:
@@ -126,6 +135,7 @@ def run_task(env: HiringOpenEnv, task: TaskDefinition, helper: OpenAIJustificati
     rewards: List[float] = []
     success = False
     step_count = 0
+    final_score_for_end = 0.01
 
     try:
         for step_index, action in enumerate(actions, start=1):
@@ -150,12 +160,13 @@ def run_task(env: HiringOpenEnv, task: TaskDefinition, helper: OpenAIJustificati
             rewards.append(0.01)
         _ = traceback.format_exc()
     finally:
-        _print_end(success=success, steps=step_count, rewards=rewards)
+        # Keep existing internal score path available for callers/tests and END output.
+        current_state = env.state()
+        graded = grade_task_state(current_state.task, current_state, current_state.candidates)
+        final_score_for_end = graded.final_score
+        _print_end(success=success, steps=step_count, rewards=rewards, final_score=final_score_for_end)
 
-    # Keep existing internal score path available for callers/tests.
-    current_state = env.state()
-    graded = grade_task_state(current_state.task, current_state, current_state.candidates)
-    return graded.final_score
+    return final_score_for_end
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

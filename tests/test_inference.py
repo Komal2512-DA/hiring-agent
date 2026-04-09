@@ -25,7 +25,7 @@ def test_inference_stdout_structure():
     assert "reward=" in output
     assert "done=" in output
 
-    assert "action_type=assign_interviewer" in output
-    assert "action_type=summarize_fit" in output
-    assert "action_type=choose_compensation_band" in output
+    assert "action_type=shortlist_candidates" in output
+    assert "action_type=advance_stage" in output
+    assert "action_type=finalize_decision" in output
 

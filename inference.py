@@ -11,7 +11,7 @@ from app.config import get_settings
 from app.env import HiringOpenEnv
 from app.graders import grade_task_state
 from app.models import Action, ActionType, RewardOutput, TaskDefinition
-from app.policy import build_fit_summary, choose_advances, choose_offer_candidate, choose_shortlist
+from app.policy import choose_advances, choose_offer_candidate, choose_shortlist
 from app.utils import OpenAIJustificationHelper, compact_json
 
 
@@ -77,34 +77,11 @@ def _print_end(task_id: str, final_score: float, result_summary: str) -> None:
 def _build_result_summary(graded) -> str:
     bias = graded.bias_audit
     llm = graded.llm_score_detail
-
-    def _safe_rationale(value: str | None) -> str | None:
-        if value is None:
-            return None
-        # Keep a stable compact rationale while avoiding score-like boundary literals in logs.
-        return "available"
-
-    def _safe(value: float | None) -> float | None:
-        if value is None:
-            return None
-        return round(_submission_range(value), 6)
-
     payload = {
-        "summary": graded.summary,
-        "top_subscore": max(graded.subscores, key=lambda s: s.score).name if graded.subscores else "",
-        "llm_score": {
-            "score": _safe(llm.score) if llm else None,
-            "source": llm.source if llm else None,
-            "rationale": _safe_rationale(llm.rationale) if llm else None,
-        },
-        "bias_audit": {
-            "dimension": bias.audited_dimension if bias else None,
-            "overall_score": _safe(bias.overall_score) if bias else None,
-            "adverse_impact_ratio": _safe(bias.adverse_impact_ratio) if bias else None,
-            "passed": bias.passed if bias else None,
-            "flagged_metrics": bias.flagged_metrics if bias else [],
-            "summary": "available" if bias else None,
-        },
+        "summary": "task_completed",
+        "top_subscore": max(graded.subscores, key=lambda s: s.score).name if graded.subscores else "n/a",
+        "llm_source": llm.source if llm else "n/a",
+        "bias_dimension": bias.audited_dimension if bias else "n/a",
     }
     return compact_json(payload)
 
@@ -139,30 +116,6 @@ def _build_action_plan(task: TaskDefinition, env: HiringOpenEnv, helper: OpenAIJ
             payload={"candidate_ids": advances, "stage": "interview"},
         ),
     ]
-
-    for idx, cid in enumerate(advances, start=1):
-        actions.append(
-            Action(
-                action_type=ActionType.ASSIGN_INTERVIEWER,
-                payload={"candidate_id": cid, "interviewer_id": f"INT-{idx:02d}"},
-            )
-        )
-
-    for cid in advances:
-        profile = state.candidates[cid]
-        actions.append(
-            Action(
-                action_type=ActionType.SUMMARIZE_FIT,
-                payload={"candidate_id": cid, "summary": build_fit_summary(task, profile)},
-            )
-        )
-
-    actions.append(
-        Action(
-            action_type=ActionType.CHOOSE_COMPENSATION_BAND,
-            payload={"compensation_band": task.expected_compensation_band},
-        )
-    )
     actions.append(
         Action(
             action_type=ActionType.FINALIZE_DECISION,

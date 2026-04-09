@@ -195,7 +195,7 @@ class EnvironmentState(BaseModel):
     bias_audit: Optional[BiasAuditResult] = None
     step_index: int = 0
     done: bool = False
-    previous_progress_score: float = 0.0
+    previous_progress_score: float = 1e-5
 
 
 class GraderSubscore(BaseModel):

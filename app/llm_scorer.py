@@ -66,9 +66,14 @@ class DecisionLLMScorer:
         evidence_score = clamp01(len(state.fit_summaries) / max(1.0, float(len(state.interview_advances) or 1)))
 
         score = clamp01((0.35 * offer_match) + (0.25 * band_match) + (0.25 * justification_score) + (0.15 * evidence_score))
+        # Keep textual diagnostics away from exact 0/1 boundaries to avoid strict parsers.
+        offer_text = clamp_open01(offer_match, epsilon=1e-2)
+        band_text = clamp_open01(band_match, epsilon=1e-2)
+        just_text = clamp_open01(justification_score, epsilon=1e-2)
+        evidence_text = clamp_open01(evidence_score, epsilon=1e-2)
         rationale = (
-            f"fallback_scoring offer_match={offer_match:.2f}, band_match={band_match:.2f}, "
-            f"justification={justification_score:.2f}, evidence={evidence_score:.2f}"
+            f"fallback_scoring offer_match={offer_text:.2f}, band_match={band_text:.2f}, "
+            f"justification={just_text:.2f}, evidence={evidence_text:.2f}"
         )
         return LLMScoreDetail(score=round(clamp_open01(score, epsilon=1e-2), 6), rationale=rationale, source=source)
 

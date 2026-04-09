@@ -64,6 +64,13 @@ def _print_end(task_id: str, final_score: float, result_summary: str) -> None:
 def _build_result_summary(graded) -> str:
     bias = graded.bias_audit
     llm = graded.llm_score_detail
+
+    def _safe_rationale(value: str | None) -> str | None:
+        if value is None:
+            return None
+        # Keep a stable compact rationale while avoiding score-like boundary literals in logs.
+        return "available"
+
     def _safe(value: float | None) -> float | None:
         if value is None:
             return None
@@ -75,7 +82,7 @@ def _build_result_summary(graded) -> str:
         "llm_score": {
             "score": _safe(llm.score) if llm else None,
             "source": llm.source if llm else None,
-            "rationale": llm.rationale if llm else None,
+            "rationale": _safe_rationale(llm.rationale) if llm else None,
         },
         "bias_audit": {
             "dimension": bias.audited_dimension if bias else None,

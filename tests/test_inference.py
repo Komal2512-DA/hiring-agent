@@ -25,8 +25,8 @@ def test_inference_stdout_structure():
     assert "error=" in output
     assert "success=" in output
     assert "steps=" in output
+    assert "score=" in output
     assert "rewards=" in output
-    assert "final_score=" in output
 
     assert "action=shortlist_candidates(" in output
     assert "action=advance_stage(" in output

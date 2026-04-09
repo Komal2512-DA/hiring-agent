@@ -33,7 +33,7 @@ def _stdout_model_name(model_name: str) -> str:
 
 
 def _print_start(task: TaskDefinition, model_name: str) -> None:
-    print(f"[START] task={task.task_id} env={BENCHMARK_NAME} model={_stdout_model_name(model_name)}")
+    print(f"[START] task={task.name} env={BENCHMARK_NAME} model={_stdout_model_name(model_name)}")
 
 
 def _print_step(step_index: int, action: Action, reward: RewardOutput, error: str | None) -> float:
@@ -52,7 +52,7 @@ def _print_end(success: bool, steps: int, rewards: List[float], final_score: flo
     rewards_text = ",".join(f"{_submission_range(value):.2f}" for value in rewards)
     print(
         f"[END] success={_bool_text(success)} steps={steps} "
-        f"rewards={rewards_text} final_score={_submission_range(final_score):.2f}"
+        f"score={_submission_range(final_score):.2f} rewards={rewards_text}"
     )
 
 

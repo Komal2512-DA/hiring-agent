@@ -192,6 +192,10 @@ curl http://localhost:7860/health
   - `[START]`
   - `[STEP]`
   - `[END]`
+  - single-line output in the form:
+    - `[START] task=<task_name> env=<benchmark> model=<model_name>`
+    - `[STEP] step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>`
+    - `[END] success=<true|false> steps=<n> score=<0.00> rewards=<r1,r2,...>`
 
 Run:
 
